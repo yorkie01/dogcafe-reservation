@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ドッグカフェ予約システム</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8B4513">
+</head>
+<body>
+    <!-- ローディング画面 -->
+    <div id="loading" class="loading-screen">
+        <div class="loader"></div>
+    </div>
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">🐕 ドッグカフェ予約</h1>
+            <div class="header-actions">
+                <button id="loginBtn" class="btn-text">ログイン</button>
+                <button id="userMenuBtn" class="btn-icon" style="display: none;">
+                    <span class="user-icon">👤</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="main-content">
+        <!-- ホーム画面 -->
+        <section id="homeSection" class="section active">
+            <div class="hero">
+                <h2>愛犬と一緒に素敵な時間を</h2>
+                <p>ドッグラン併設のカフェで、ワンちゃんと楽しいひとときを</p>
+            </div>
+
+            <div class="plan-cards">
+                <div class="plan-card" data-plan="30min">
+                    <h3>30分コース</h3>
+                    <p class="price">¥500</p>
+                    <p class="description">気軽にドッグランを利用</p>
+                    <button class="btn-primary">予約する</button>
+                </div>
+
+                <div class="plan-card" data-plan="60min">
+                    <h3>60分コース</h3>
+                    <p class="price">¥900</p>
+                    <p class="description">ゆっくりと遊べる標準コース</p>
+                    <button class="btn-primary">予約する</button>
+                </div>
+
+                <div class="plan-card" data-plan="60min-lunch">
+                    <h3>60分+ランチ</h3>
+                    <p class="price">¥1,500</p>
+                    <p class="description">ドッグラン利用とランチセット</p>
+                    <button class="btn-primary">予約する</button>
+                </div>
+
+                <div class="plan-card" data-plan="60min-dinner">
+                    <h3>60分+ディナー</h3>
+                    <p class="price">¥1,800</p>
+                    <p class="description">ドッグラン利用とディナーセット</p>
+                    <button class="btn-primary">予約する</button>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>営業時間</h3>
+                <p>平日: 10:00 - 20:00</p>
+                <p>土日祝: 9:00 - 21:00</p>
+                <p>定休日: 火曜日</p>
+            </div>
+        </section>
+
+        <!-- 予約画面 -->
+        <section id="reservationSection" class="section">
+            <h2>予約フォーム</h2>
+            <form id="reservationForm" class="reservation-form">
+                <div class="form-group">
+                    <label>選択プラン</label>
+                    <div id="selectedPlan" class="selected-plan"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reservationDate">予約日</label>
+                    <input type="date" id="reservationDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reservationTime">予約時間</label>
+                    <select id="reservationTime" required>
+                        <option value="">時間を選択してください</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="guestCount">利用人数</label>
+                    <input type="number" id="guestCount" min="1" max="10" value="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="petCount">ワンちゃんの頭数</label>
+                    <input type="number" id="petCount" min="1" max="5" value="1" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">備考（任意）</label>
+                    <textarea id="notes" rows="3" placeholder="アレルギーやご要望など"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="showHome()">戻る</button>
+                    <button type="submit" class="btn-primary">予約確認へ</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- 予約確認画面 -->
+        <section id="confirmSection" class="section">
+            <h2>予約内容確認</h2>
+            <div id="confirmDetails" class="confirm-details"></div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="backToReservation()">修正する</button>
+                <button type="button" class="btn-primary" onclick="submitReservation()">予約を確定する</button>
+            </div>
+        </section>
+
+        <!-- 予約完了画面 -->
+        <section id="completeSection" class="section">
+            <div class="complete-message">
+                <div class="success-icon">✅</div>
+                <h2>予約が完了しました</h2>
+                <p>ご予約ありがとうございます。</p>
+                <div id="reservationQR" class="qr-code"></div>
+                <p class="small-text">このQRコードを来店時にご提示ください</p>
+                <button class="btn-primary" onclick="showHome()">ホームに戻る</button>
+            </div>
+        </section>
+
+        <!-- マイページ -->
+        <section id="myPageSection" class="section">
+            <h2>マイページ</h2>
+            <div class="user-info">
+                <p id="userEmail"></p>
+            </div>
+            <div class="reservation-list">
+                <h3>予約履歴</h3>
+                <div id="reservationList"></div>
+            </div>
+            <button class="btn-secondary" onclick="logout()">ログアウト</button>
+        </section>
+    </main>
+
+    <!-- ログインモーダル -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>ログイン</h2>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email">メールアドレス</label>
+                        <input type="email" id="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">パスワード</label>
+                        <input type="password" id="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary full-width">ログイン</button>
+                </form>
+                <p class="text-center mt-2">
+                    アカウントをお持ちでない方は
+                    <a href="#" onclick="showSignupForm()">新規登録</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase設定用スクリプト（ビルド時に置換） -->
+    <script>
+        window.SUPABASE_URL = '%%SUPABASE_URL%%';
+        window.SUPABASE_ANON_KEY = '%%SUPABASE_ANON_KEY%%';
+    </script>
+    
+    <!-- アプリケーションスクリプト -->
+    <script src="js/app.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/reservation.js"></script>
+</body>
+</html>

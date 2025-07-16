@@ -1,0 +1,45 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Replace environment variables
+      run: |
+        # index.htmlの環境変数を置換
+        sed -i "s|%%SUPABASE_URL%%|${{ secrets.SUPABASE_URL }}|g" src/index.html
+        sed -i "s|%%SUPABASE_ANON_KEY%%|${{ secrets.SUPABASE_ANON_KEY }}|g" src/index.html
+        
+        # manifest.jsonがある場合の処理
+        if [ -f src/manifest.json ]; then
+          sed -i "s|%%APP_URL%%|https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}|g" src/manifest.json
+        fi
+
+    - name: Setup build directory
+      run: |
+        # ビルド用ディレクトリを作成
+        mkdir -p build
+        
+        # srcディレクトリの内容をbuildにコピー
+        cp -r src/* build/
+        
+        # ルートファイルもコピー
+        if [ -f 404.html ]; then cp 404.html build/; fi
+        if [ -f CNAME ]; then cp CNAME build/; fi
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build
+        publish_branch: gh-pages
+        force_orphan: true
