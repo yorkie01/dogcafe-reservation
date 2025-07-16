@@ -190,7 +190,7 @@ function handleReservationSubmit(e) {
     showConfirmation();
 }
 
-// 予約確定処理
+// 予約確定処理（app.js の submitReservation 関数を置き換え）
 async function submitReservation() {
     if (!supabase || !currentUser) {
         alert('ログインが必要です');
@@ -201,6 +201,27 @@ async function submitReservation() {
         // ローディング表示
         document.getElementById('loading').style.display = 'flex';
         
+        // 時間の計算（プランに基づいて終了時間を設定）
+        const startTime = window.reservationData.time;
+        const [hours, minutes] = startTime.split(':').map(Number);
+        let endHours = hours;
+        let endMinutes = minutes;
+        
+        // プランによって時間を加算
+        if (selectedPlan.type === '30min') {
+            endMinutes += 30;
+        } else {
+            endHours += 1; // 60分プラン
+        }
+        
+        // 分が60を超えた場合の調整
+        if (endMinutes >= 60) {
+            endHours += 1;
+            endMinutes -= 60;
+        }
+        
+        const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
+        
         // 予約データの作成
         const reservationData = {
             user_id: currentUser.id,
@@ -208,25 +229,40 @@ async function submitReservation() {
             plan_name: selectedPlan.name,
             plan_price: selectedPlan.price,
             reservation_date: window.reservationData.date,
-            start_time: window.reservationData.time,
+            start_time: startTime,
+            end_time: endTime,
             guest_count: parseInt(window.reservationData.guestCount),
             pet_count: parseInt(window.reservationData.petCount),
-            notes: window.reservationData.notes,
+            notes: window.reservationData.notes || '',
             status: 'confirmed'
         };
         
-        // Supabaseに保存（実際の実装時）
-        // const { data, error } = await supabase
-        //     .from('reservations')
-        //     .insert([reservationData]);
+        console.log('保存する予約データ:', reservationData);
         
-        // 仮の予約ID（実際はデータベースから取得）
-        const reservationId = 'RSV' + Date.now();
+        // Supabaseに保存
+        const { data, error } = await supabase
+            .from('reservations')
+            .insert([reservationData])
+            .select();
         
-        // QRコード生成（実際の実装時はライブラリを使用）
+        if (error) {
+            console.error('Supabaseエラー:', error);
+            throw error;
+        }
+        
+        console.log('保存成功:', data);
+        
+        // 予約IDを取得
+        const reservationId = data[0].id;
+        
+        // QRコード表示（仮）
         document.getElementById('reservationQR').innerHTML = 
-            `<div style="padding: 20px; border: 2px solid #333;">
-                予約ID: ${reservationId}
+            `<div style="padding: 20px; border: 2px solid #333; background: white;">
+                <div style="font-size: 14px; margin-bottom: 10px;">予約ID</div>
+                <div style="font-size: 18px; font-weight: bold;">${reservationId.slice(0, 8).toUpperCase()}</div>
+                <div style="font-size: 12px; margin-top: 10px;">
+                    ${window.reservationData.date} ${startTime}
+                </div>
             </div>`;
         
         // ローディング非表示
@@ -237,7 +273,7 @@ async function submitReservation() {
         
     } catch (error) {
         console.error('予約エラー:', error);
-        alert('予約の処理中にエラーが発生しました');
+        alert('予約の処理中にエラーが発生しました: ' + error.message);
         document.getElementById('loading').style.display = 'none';
     }
 }
